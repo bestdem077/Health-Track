@@ -22,8 +22,8 @@ jobs:
         distribution: 'temurin'
         # Gradle caching is temporarily disabled to avoid GitHub service 400/503 errors
 
-    - name: Ensure execute permission for gradlew
-      run: chmod +x gradlew
+    - name: Generate fresh Gradle Wrapper
+      run: gradle wrapper --gradle-version 8.10
 
     - name: Setup Environment Variables
       run: |
