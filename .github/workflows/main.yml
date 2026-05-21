@@ -2,11 +2,9 @@ name: Build Android APK
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "main", "master" ]
-
-  # Allows you to run this workflow manually from the Actions tab
+    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
@@ -22,15 +20,10 @@ jobs:
       with:
         java-version: '21'
         distribution: 'temurin'
-        cache: gradle
+        # Gradle caching is temporarily disabled to avoid GitHub service 400/503 errors
 
-    - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@v3
-      with:
-        gradle-version: '8.10'
-
-    - name: Decode Debug Keystore
-      run: if [ -f debug.keystore.base64 ]; then base64 -d debug.keystore.base64 > debug.keystore; fi
+    - name: Ensure execute permission for gradlew
+      run: chmod +x gradlew
 
     - name: Setup Environment Variables
       run: |
@@ -40,8 +33,15 @@ jobs:
           touch .env
         fi
 
+    - name: Generate debug.keystore 
+      # Since debug.keystore.base64 was deleted, we generate a fresh keystore during the build
+      run: |
+        if [ ! -f debug.keystore ]; then
+          keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "C=US, O=Android, CN=Android Debug"
+        fi
+
     - name: Build Debug APK
-      run: gradle assembleDebug
+      run: ./gradlew assembleDebug
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
